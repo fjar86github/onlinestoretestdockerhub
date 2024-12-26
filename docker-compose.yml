@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: fjar86/onlinestorev2docker-frontend:latest
+    depends_on:
+      - backend_php
+      - backend_python
+    ports:
+      - "8080:80"
+    networks:
+      - app_network
+
+  backend_php:
+    image: fjar86/onlinestorev2docker-backend_php:latest
+    depends_on:
+      - mysql
+      - rabbitmq
+    networks:
+      - app_network
+    environment:
+      - DATABASE_URL=mysql://root:root@mysql:3306/onlinestore
+      - RABBITMQ_URL=rabbitmq://rabbitmq:5672
+
+  backend_python:
+    image: fjar86/onlinestorev2docker-backend_python:latest
+    depends_on:
+      - mysql
+      - rabbitmq
+    networks:
+      - app_network
+    environment:
+      - DATABASE_URL=mysql://root:root@mysql:3306/onlinestore
+      - RABBITMQ_URL=rabbitmq://rabbitmq:5672
+
+  mysql:
+    image: fjar86/onlinestorev2docker-mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: onlinestore
+    ports:
+      - "3306:3306"
+    networks:
+      - app_network
+
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    networks:
+      - app_network
+
+  nginx:
+    image: fjar86/onlinestorev2docker-nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend_php
+      - backend_python
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
